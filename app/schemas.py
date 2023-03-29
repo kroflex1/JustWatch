@@ -10,6 +10,11 @@ class UserCreate(UserBase):
     password: str
 
 
+class UserIn(BaseModel):
+    email: str
+    password: str
+
+
 class User(UserBase):
     id: int
     is_active: bool

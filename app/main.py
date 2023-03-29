@@ -1,23 +1,13 @@
-from datetime import datetime, timedelta
-from typing import Annotated
-from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import JWTError, jwt
-
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends,  Body, Header
+import fastapi_jsonrpc as jsonrpc
+import logging
+from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
 
-from . import crud, models, schemas
+from . import crud, models, schemas, errors, authentication
 from .database import SessionLocal, engine
 
-models.Base.metadata.create_all(bind=engine)
-
-app = FastAPI()
-SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+logger = logging.getLogger(__name__)
 
 
 def get_db():
@@ -28,78 +18,53 @@ def get_db():
         db.close()
 
 
-@app.post("/users/", response_model=schemas.User)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_email(db, email=user.email)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.create_user(db=db, user=user)
+def get_auth_user(auth_token: str = Header(None, alias='user-auth-token'),
+                  db: Session = Depends(get_db)) -> schemas.UserBase:
+    if not auth_token:
+        raise errors.AuthError
+    user_id = authentication.decrypt_token(auth_token)
+    user_db = crud.get_user_by_id(db=db, user_id=user_id)
+    return schemas.UserBase(email=user_db.email, username=user_db.username)
 
 
-@app.get("/users/{user_id}", response_model=schemas.User)
-def read_user(user_id: int, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_id(db, user_id=user_id)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user
-
-
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
-def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+@asynccontextmanager
+async def logging_middleware(ctx: jsonrpc.JsonRpcContext):
+    logger.info('Request: %r', ctx.raw_request)
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if datetime.fromtimestamp(int(payload.get("exp"))) < datetime.now():
-            raise credentials_exception
-        email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    user = crud.get_user_by_email(db, email=email)
-    if user is None:
-        raise credentials_exception
-    return schemas.UserBase(email=user.email, username=user.username)
+        yield
+    finally:
+        logger.info('Response: %r', ctx.raw_response)
 
 
-@app.post("/token", response_model=schemas.Token)
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-                                 db: Session = Depends(get_db)):
-    user = crud.get_user_by_email_and_password(db=db, email=form_data.username, password=form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+api = jsonrpc.Entrypoint(
+    '/api',
+    middlewares=[logging_middleware],
+)
+
+models.Base.metadata.create_all(bind=engine)
+
+@api.method()
+def test(number: int = Body()) -> str:
+    return str(number + 1)
 
 
-@app.get("/users/me/", response_model=schemas.UserBase)
-async def read_users_me(current_user: Annotated[schemas.UserBase, Depends(get_current_user)]):
-    return current_user
+@api.method()
+def register_user(user_data: schemas.UserCreate = Body(), db: Session = Depends(get_db)) -> str:
+    user_db = crud.get_user_by_email(db=db, email=user_data.email)
+    if user_db:
+        raise errors.RegisterError
+    crud.create_user(db=db, user=user_data)
+    return "user registered"
 
 
-@app.get("/video")
-async def get_video(current_user: Annotated[schemas.UserBase, Depends(get_current_user)]):
-    if current_user is not None:
-        return "У тебя есть токен"
+@api.method()
+def login_for_access_token(user_data: schemas.UserIn = Body(), db: Session = Depends(get_db)) -> str:
+    user_db = crud.get_user_by_email(db=db, email=user_data.email)
+    if user_db is None:
+        raise errors.AccountNotFound
+    access_token = authentication.create_access_token(user_db.id)
+    return access_token
 
+
+app = jsonrpc.API()
+app.bind_entrypoint(api)
