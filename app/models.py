@@ -11,6 +11,7 @@ class User(BaseModel):
     email = CharField(unique=True, index=True)
     username = CharField(unique=True, index=True)
     hashed_password = CharField()
+    refresh_token = CharField(null=True)
     is_active = BooleanField(default=True)
 
 
@@ -19,4 +20,3 @@ class Video(BaseModel):
     author_id = ForeignKeyField(User, backref="videos")
     number_of_likes = IntegerField()
     number_of_dislikes = IntegerField()
-

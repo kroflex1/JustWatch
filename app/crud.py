@@ -23,3 +23,8 @@ def create_user(user: schemas.UserCreate):
     db_user = models.User(email=user.email, username=user.username, hashed_password=hashed_password)
     db_user.save()
     return db_user
+
+
+def update_user_refresh_token(user_id: int, refresh_token: str):
+    q = (models.User.update({models.User.refresh_token: refresh_token}).where(models.User.id == user_id))
+    q.execute()

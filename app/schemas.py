@@ -1,7 +1,7 @@
 from typing import Any, List
 
 import peewee
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic.utils import GetterDict
 
 
@@ -28,17 +28,17 @@ class Video(VideoBase):
 
 
 class UserBase(BaseModel):
-    email: str
-    username: str
-
-
-class UserIn(BaseModel):
-    email: str
-    password: str
+    email: str = Field(example="supercat@gamil.com")
+    username: str = Field(example="superCat228")
 
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(example="superPassword")
+
+
+class UserIn(BaseModel):
+    email: str = Field(example="supercat@gamil.com")
+    password: str = Field(example="superPassword")
 
 
 class User(UserBase):
@@ -51,6 +51,6 @@ class User(UserBase):
         getter_dict = PeeweeGetterDict
 
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
+class Tokens(BaseModel):
+    access_token: str = Field(example="eyJhbGciOiJIU.eyJleHAiOiIxMjM0NTY3.-Wp-D4EWy79DFM")
+    refresh_token: str = Field("R5cCI6Ikp.eyJleHAcl9pZCI6MX0.AIdrrnGpoz79DFM")
