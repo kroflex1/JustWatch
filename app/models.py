@@ -1,24 +1,22 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship
-
-from .database import Base
+from peewee import *
+from .database import db
 
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    username = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    is_active = Column(Boolean, default=True)
-    video = relationship("Video", back_populates="video")
+class BaseModel(Model):
+    class Meta:
+        database = db
 
 
-class Video(Base):
-    __tablename__ = "videos"
+class User(BaseModel):
+    email = CharField(unique=True, index=True)
+    username = CharField(unique=True, index=True)
+    hashed_password = CharField()
+    is_active = BooleanField(default=True)
 
-    video_id = Column(Integer, primary_key=True, index=True)
-    video_name = Column(String, index=True)
-    author_id = Column(Integer, ForeignKey("users.id"))
-    author = relationship("User", back_populates="author")
+
+class Video(BaseModel):
+    video_name = CharField(index=True)
+    author_id = ForeignKeyField(User, backref="videos")
+    number_of_likes = IntegerField()
+    number_of_dislikes = IntegerField()
+
