@@ -28,3 +28,8 @@ def create_user(user: schemas.UserCreate):
 def update_user_refresh_token(user_id: int, refresh_token: str):
     q = (models.User.update({models.User.refresh_token: refresh_token}).where(models.User.id == user_id))
     q.execute()
+
+
+def create_video(video: schemas.VideoBase, user_id: int):
+    db_video = models.Video(video_name=video.video_name, author_id=user_id, description=video.description)
+    db_video.save()

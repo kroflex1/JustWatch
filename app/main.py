@@ -1,9 +1,10 @@
-from fastapi import Depends, Body, Header
+from fastapi import Depends, Body, Header, UploadFile
 import fastapi_jsonrpc as jsonrpc
 import logging
 from contextlib import asynccontextmanager
+from typing import Annotated
 
-from . import crud, schemas, errors, authentication, database, models
+from . import crud, schemas, errors, authentication, database, models, videoDownloader
 from .database import db_state_default
 
 logger = logging.getLogger(__name__)
@@ -26,11 +27,10 @@ def get_db(db_state=Depends(reset_db_state)):
             database.db.close()
 
 
-def get_auth_user(access_token: str = Header(None, alias='access-token'),
-                  dependencies=[Depends(get_db)]) -> schemas.UserBase:
+async def get_auth_user(access_token: str = Header(None, alias='access-token')) -> schemas.User:
     if not access_token:
-        raise errors.AuthError
-    user_id = authentication.TokenManager.decrypt_token(access_token)
+        raise errors.TokenMissinError
+    user_id = authentication.TokenManager.get_user_id_from_token(access_token)
     user_db = crud.get_user_by_id(user_id=user_id)
     return user_db
 
@@ -54,7 +54,7 @@ api = jsonrpc.Entrypoint(
 def get_new_refresh_and_access_token(refresh_token: str = Header(None, alias='refresh-token')) -> schemas.Tokens:
     if not refresh_token:
         raise errors.AuthError
-    user_id = authentication.TokenManager.decrypt_token(refresh_token)
+    user_id = authentication.TokenManager.get_user_id_from_token(refresh_token)
     user_db = crud.get_user_by_id(user_id=user_id)
     if user_db.refresh_token != refresh_token:
         raise errors.AuthError
@@ -84,5 +84,19 @@ def login(user_data: schemas.UserIn = Body()) -> schemas.Tokens:
     return tokens
 
 
+@api.method(dependencies=[Depends(get_db)])
+def post_video(user: Annotated[schemas.User, Depends(get_auth_user)], video_data: schemas.VideoBase):
+    crud.create_video(video_data, user.id)
+
+
 app = jsonrpc.API()
 app.bind_entrypoint(api)
+
+
+@app.post("/uploadfile/")
+async def upload_video_file(video_data: schemas.VideoBase, video_file: UploadFile | None = None):
+    if not video_file:
+        return {"message": "No upload file sent"}
+    video_downloader = videoDownloader.VideoDownloader()
+    video_downloader.download_video(video_file)
+

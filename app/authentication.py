@@ -23,7 +23,7 @@ class TokenManager:
         return schemas.Tokens(access_token=access_token, refresh_token=refresh_token)
 
     @staticmethod
-    def decrypt_token(token: str) -> int:
+    def get_user_id_from_token(token: str) -> int:
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             if datetime.fromtimestamp(int(payload.get("exp"))) < datetime.now():

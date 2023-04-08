@@ -3,6 +3,7 @@ from typing import Any, List
 import peewee
 from pydantic import BaseModel, Field
 from pydantic.utils import GetterDict
+from datetime import datetime
 
 
 class PeeweeGetterDict(GetterDict):
@@ -14,13 +15,14 @@ class PeeweeGetterDict(GetterDict):
 
 
 class VideoBase(BaseModel):
-    video_name: str
-    number_of_likes: int
-    number_of_dislikes: int
+    video_name: str = Field(example="Top 10 cats")
+    description: str = Field(example="Videos about the funniest cats")
 
 
 class Video(VideoBase):
-    author_id: int
+    number_of_likes: int = Field(example=11)
+    number_of_dislikes: int = Field(example=6)
+    creation_time: datetime
 
     class Config:
         orm_mode = True

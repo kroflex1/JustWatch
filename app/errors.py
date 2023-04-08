@@ -11,6 +11,11 @@ class RegisterError(jsonrpc.BaseError):
     MESSAGE = 'Register error'
 
 
+class AccountNotFound(jsonrpc.BaseError):
+    CODE = 6000
+    MESSAGE = 'Account not found'
+
+
 class TokenError(jsonrpc.BaseModel):
     CODE = 8000
     MESSAGE = 'Invalid token'
@@ -20,12 +25,16 @@ class TokenExpireError(jsonrpc.BaseModel):
     CODE = 8000
     MESSAGE = 'The token expired'
 
+class TokenMissinError(jsonrpc.BaseError):
+    CODE = 8000
+    MESSAGE = 'The token is missing in header'
+
 
 class TokenSubError(jsonrpc.BaseModel):
     CODE = 8000
     MESSAGE = 'Token sub empty'
 
 
-class AccountNotFound(jsonrpc.BaseError):
-    CODE = 6000
-    MESSAGE = 'Account not found'
+class VideoNameEmptyError(jsonrpc.BaseModel):
+    CODE = 5000
+    MESSAGE = 'Video name is empty'

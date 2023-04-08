@@ -1,5 +1,6 @@
 from peewee import *
 from .database import db
+import datetime
 
 
 class BaseModel(Model):
@@ -18,5 +19,7 @@ class User(BaseModel):
 class Video(BaseModel):
     video_name = CharField(index=True)
     author_id = ForeignKeyField(User, backref="videos")
-    number_of_likes = IntegerField()
-    number_of_dislikes = IntegerField()
+    description = CharField(default='')
+    creation_time = DateTimeField(default=datetime.datetime.now)
+    number_of_likes = IntegerField(default=0)
+    number_of_dislikes = IntegerField(default=0)
