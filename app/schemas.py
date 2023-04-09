@@ -20,6 +20,8 @@ class VideoBase(BaseModel):
 
 
 class Video(VideoBase):
+    id: int = Field(example=1)
+    author_id: int = Field(example=523)
     number_of_likes: int = Field(example=11)
     number_of_dislikes: int = Field(example=6)
     creation_time: datetime
@@ -55,4 +57,4 @@ class User(UserBase):
 
 class Tokens(BaseModel):
     access_token: str = Field(example="eyJhbGciOiJIU.eyJleHAiOiIxMjM0NTY3.-Wp-D4EWy79DFM")
-    refresh_token: str = Field("R5cCI6Ikp.eyJleHAcl9pZCI6MX0.AIdrrnGpoz79DFM")
+    refresh_token: str = Field(example="R5cCI6Ikp.eyJleHAcl9pZCI6MX0.AIdrrnGpoz79DFM")

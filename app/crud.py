@@ -1,4 +1,4 @@
-from . import models, schemas
+from . import models, schemas, errors
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -19,10 +19,26 @@ def get_user_by_email_and_password(email: str, password: str):
 
 
 def create_user(user: schemas.UserCreate):
+    if user.username == '' or user.email == '' or user.password == '':
+        raise errors.AuthError
     hashed_password = pwd_context.hash(user.password)
     db_user = models.User(email=user.email, username=user.username, hashed_password=hashed_password)
-    db_user.save()
-    return db_user
+    try:
+        db_user.save()
+    except:
+        raise errors.RegisterError
+    else:
+        return db_user
+
+
+def delete_user_by_id(user_id: int):
+    q = models.User.delete().where(models.User.id == user_id)
+    q.execute()
+
+
+def delete_user_by_email(email: str):
+    q = models.User.delete().where(models.User.email == email)
+    q.execute()
 
 
 def update_user_refresh_token(user_id: int, refresh_token: str):
@@ -33,3 +49,9 @@ def update_user_refresh_token(user_id: int, refresh_token: str):
 def create_video(video: schemas.VideoBase, user_id: int):
     db_video = models.Video(video_name=video.video_name, author_id=user_id, description=video.description)
     db_video.save()
+    return db_video
+
+
+def delete_video(video_id: int):
+    q = models.Video.delete().where(models.Video.id == video_id)
+    q.execute()

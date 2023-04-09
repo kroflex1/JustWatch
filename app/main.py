@@ -4,7 +4,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from . import crud, schemas, errors, authentication, database, models, videoDownloader
+from . import crud, schemas, errors, authentication, database, models, video
 from .database import db_state_default
 
 logger = logging.getLogger(__name__)
@@ -27,10 +27,10 @@ def get_db(db_state=Depends(reset_db_state)):
             database.db.close()
 
 
-async def get_auth_user(access_token: str = Header(None, alias='access-token')) -> schemas.User:
+async def get_current_user(access_token: str = Header(None, alias='access-token')) -> schemas.User:
     if not access_token:
-        raise errors.TokenMissinError
-    user_id = authentication.TokenManager.get_user_id_from_token(access_token)
+        raise errors.AccessTokenMissingError
+    user_id = authentication.TokenManager.try_get_user_id_from_token(access_token)
     user_db = crud.get_user_by_id(user_id=user_id)
     return user_db
 
@@ -53,14 +53,15 @@ api = jsonrpc.Entrypoint(
 @api.method(dependencies=[Depends(get_db)])
 def get_new_refresh_and_access_token(refresh_token: str = Header(None, alias='refresh-token')) -> schemas.Tokens:
     if not refresh_token:
-        raise errors.AuthError
-    user_id = authentication.TokenManager.get_user_id_from_token(refresh_token)
+        raise errors.RefreshTokenMissingError
+    user_id = authentication.TokenManager.try_get_user_id_from_token(refresh_token)
     user_db = crud.get_user_by_id(user_id=user_id)
     if user_db.refresh_token != refresh_token:
         raise errors.AuthError
-    tokens = authentication.TokenManager.create_access_and_refresh_token(user_db.id)
-    crud.update_user_refresh_token(user_id, tokens.refresh_token)
-    return tokens
+
+    new_tokens = authentication.TokenManager.create_access_and_refresh_token(user_db.id)
+    crud.update_user_refresh_token(user_id, new_tokens.refresh_token)
+    return new_tokens
 
 
 @api.method(dependencies=[Depends(get_db)])
@@ -68,10 +69,11 @@ def register_user(user_data: schemas.UserCreate = Body()) -> schemas.Tokens:
     user_db = crud.get_user_by_email(email=user_data.email)
     if user_db:
         raise errors.RegisterError
+
     user_db = crud.create_user(user=user_data)
-    tokens = authentication.TokenManager.create_access_and_refresh_token(user_db.id)
-    crud.update_user_refresh_token(user_db.id, tokens.refresh_token)
-    return tokens
+    new_tokens = authentication.TokenManager.create_access_and_refresh_token(user_db.id)
+    crud.update_user_refresh_token(user_db.id, new_tokens.refresh_token)
+    return new_tokens
 
 
 @api.method(dependencies=[Depends(get_db)])
@@ -79,24 +81,20 @@ def login(user_data: schemas.UserIn = Body()) -> schemas.Tokens:
     user_db = crud.get_user_by_email_and_password(email=user_data.email, password=user_data.password)
     if user_db is None:
         raise errors.AccountNotFound
-    tokens = authentication.TokenManager.create_access_and_refresh_token(user_db.id)
-    crud.update_user_refresh_token(user_db.id, tokens.refresh_token)
-    return tokens
 
-
-@api.method(dependencies=[Depends(get_db)])
-def post_video(user: Annotated[schemas.User, Depends(get_auth_user)], video_data: schemas.VideoBase):
-    crud.create_video(video_data, user.id)
+    new_tokens = authentication.TokenManager.create_access_and_refresh_token(user_db.id)
+    crud.update_user_refresh_token(user_db.id, new_tokens.refresh_token)
+    return new_tokens
 
 
 app = jsonrpc.API()
 app.bind_entrypoint(api)
 
 
-@app.post("/uploadfile/")
-async def upload_video_file(video_data: schemas.VideoBase, video_file: UploadFile | None = None):
+@app.post("/uploadVideoFile", dependencies=[Depends(get_db)])
+async def upload_video_file(video_inf: schemas.VideoBase,
+                            video_file: UploadFile | None = None):
     if not video_file:
-        return {"message": "No upload file sent"}
-    video_downloader = videoDownloader.VideoDownloader()
-    video_downloader.download_video(video_file)
-
+        raise errors.NoFileError
+    video_downloader = video.VideoManager()
+    video_downloader.upload_video(video_file, video_inf)
