@@ -14,6 +14,9 @@ test_db.drop_tables([models.User, models.Video])
 test_db.create_tables([models.User, models.Video])
 test_db.close()
 
+VIDEO_NAME = 'Top 10 cats'
+VIDEO_DESCRIPTION = 'The most funny cats'
+
 
 def override_get_db():
     try:
@@ -44,6 +47,13 @@ JSON_PRC_BASE_REGISTRATION = {
 }
 
 
-def test_upload_video_file_s3():
-    
+def create_author():
+    user = schemas.UserCreate(email='test_user@mail.ru', username='test_user_name', password='test_user_password')
+    return crud.create_user(user)
 
+
+def test_upload_video_file_s3():
+    author = create_author()
+    with open('/tests/static_files/test_video.mp4') as video_file:
+        db_video = video.VideoManager.upload_video(video_file, VIDEO_NAME, VIDEO_DESCRIPTION, author.id)
+    assert db_video.video_name == VIDEO_NAME

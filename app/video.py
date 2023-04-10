@@ -11,7 +11,7 @@ class VideoManager:
     __AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 
     @staticmethod
-    def upload_video(self, video_file, video_name: str, video_description: str, author_id: int):
+    def upload_video(video_file, video_name: str, video_description: str, author_id: int):
         if video_name == '':
             raise errors.VideoNameEmptyError
         video_base = schemas.VideoBase(video_name=video_name, description=video_description)
@@ -23,4 +23,10 @@ class VideoManager:
             aws_secret_access_key=VideoManager.__AWS_SECRET_ACCESS_KEY,
             endpoint_url='https://storage.yandexcloud.net'
         )
-        s3.upload_fileobj(video_file, 'justwatchvideos', db_video.id)
+        s3.upload_fileobj(video_file, 'justwatchvideos', str(db_video.id))
+        return db_video
+
+    @staticmethod
+    def get_video_file(video_id:int):
+        pass
+
