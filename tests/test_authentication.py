@@ -63,15 +63,20 @@ def test_user_created_after_request():
     user_db = crud.get_user_by_email(USER_EMAIL)
     assert user_db.email == USER_EMAIL
     assert user_db.username == USERNAME
-    crud.delete_user_by_email(USER_EMAIL)
+    test_db.drop_tables([models.User, models.Video])
+    test_db.create_tables([models.User, models.Video])
 
 
 def test_create_tokens_after_registration():
     json_rpc = JSON_PRC_BASE_REGISTRATION.copy()
     response = client.post("/api", json=json_rpc)
-    assert response.json()['result']['access_token']
-    assert response.json()['result']['refresh_token']
-    crud.delete_user_by_email(USER_EMAIL)
+    data = response.json()['result']
+    access_token = data['access_token']
+    refresh_token = data['refresh_token']
+    assert access_token != ''
+    assert refresh_token != ''
+    test_db.drop_tables([models.User, models.Video])
+    test_db.create_tables([models.User, models.Video])
 
 
 def test_register_identical_users():
@@ -81,12 +86,9 @@ def test_register_identical_users():
         client.post("/api", json=json_rpc)
 
 
-# def test_tokens_after_registration:
-#     pass
-
-
 def test_user_login():
     response = client.post("/api", json=JSON_PRC_BASE_LOGIN)
     assert response.json()['result']['access_token']
     assert response.json()['result']['refresh_token']
-    crud.delete_user_by_email(USER_EMAIL)
+    test_db.drop_tables([models.User, models.Video])
+    test_db.create_tables([models.User, models.Video])
