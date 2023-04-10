@@ -46,10 +46,14 @@ def update_user_refresh_token(user_id: int, refresh_token: str):
     q.execute()
 
 
-def create_video(video: schemas.VideoBase, user_id: int):
-    db_video = models.Video(video_name=video.video_name, author_id=user_id, description=video.description)
+def create_video(video_base: schemas.VideoBase, user_id: int):
+    db_video = models.Video(video_name=video_base.video_name, author_id=user_id, description=video_base.description)
     db_video.save()
     return db_video
+
+
+def get_video_by_id(video_id: int):
+    return models.Video.filter(models.Video == video_id).first()
 
 
 def delete_video(video_id: int):

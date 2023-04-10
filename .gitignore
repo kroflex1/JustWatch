@@ -181,3 +181,6 @@ fabric.properties
 
 
 .idea
+
+*.db
+app/database.db
