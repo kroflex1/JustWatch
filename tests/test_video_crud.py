@@ -19,17 +19,6 @@ def create_author():
     return crud.create_user(user)
 
 
-def test_create_video():
-    author = create_author()
-    video_base = schemas.VideoBase(video_name=VIDEO_NAME, description=VIDEO_DESCRIPTION)
-    video_db = crud.create_video(video_base, author.id)
-    assert video_db.video_name == VIDEO_NAME
-    assert video_db.description == VIDEO_DESCRIPTION
-    assert video_db.author_id.id == author.id
-    test_db.drop_tables([models.User, models.Video])
-    test_db.create_tables([models.User, models.Video])
-
-
 def test_author_have_videos():
     author = create_author()
     video_bases = [('video_1', 'video_1_desc'), ('video_2', 'video_2_desc'), ('video_3', 'video_3_desc')]
@@ -43,3 +32,13 @@ def test_author_have_videos():
     test_db.drop_tables([models.User, models.Video])
     test_db.create_tables([models.User, models.Video])
 
+
+def test_create_video():
+    author = create_author()
+    video_base = schemas.VideoBase(video_name=VIDEO_NAME, description=VIDEO_DESCRIPTION)
+    video_db = crud.create_video(video_base, author.id)
+    assert video_db.video_name == VIDEO_NAME
+    assert video_db.description == VIDEO_DESCRIPTION
+    assert video_db.author_id.id == author.id
+    test_db.drop_tables([models.User, models.Video])
+    test_db.create_tables([models.User, models.Video])

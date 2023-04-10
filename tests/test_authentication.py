@@ -70,7 +70,7 @@ def test_user_created_after_request():
 def test_create_tokens_after_registration():
     json_rpc = JSON_PRC_BASE_REGISTRATION.copy()
     response = client.post("/api", json=json_rpc)
-    data = response.json()['result']
+    data = response.json()["result"]
     access_token = data['access_token']
     refresh_token = data['refresh_token']
     assert access_token != ''

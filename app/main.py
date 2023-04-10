@@ -91,10 +91,11 @@ app = jsonrpc.API()
 app.bind_entrypoint(api)
 
 
-@app.post("/uploadVideoFile", dependencies=[Depends(get_db)])
-async def upload_video_file(video_inf: schemas.VideoBase,
-                            video_file: UploadFile | None = None):
-    if not video_file:
+@app.post("/upload-video-file", dependencies=[Depends(get_db)])
+async def upload_video_file(user: Annotated[schemas.User, Depends(get_current_user)], video_name: str,
+                            video_descr: str | None = None,
+                            data: UploadFile | None = None) -> int:
+    if not data:
         raise errors.NoFileError
-    video_downloader = video.VideoManager()
-    video_downloader.upload_video(video_file, video_inf)
+    db_video = video.VideoManager().upload_video(data.file, video_name, video_descr, user.id)
+    return int(db_video.id)
