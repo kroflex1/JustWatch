@@ -1,7 +1,13 @@
 from . import models, schemas, errors
 from passlib.context import CryptContext
+from enum import Enum
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+class Reaction(Enum):
+    LIKE = 1
+    DISLIKE = 2
 
 
 def get_user_by_id(user_id: int):
@@ -46,14 +52,47 @@ def update_user_refresh_token(user_id: int, refresh_token: str):
     q.execute()
 
 
-def create_video(video_base: schemas.VideoBase, user_id: int):
+def create_video(video_base: schemas.VideoCreate, user_id: int):
     db_video = models.Video(video_name=video_base.video_name, author_id=user_id, description=video_base.description)
     db_video.save()
     return db_video
 
 
 def get_video_by_id(video_id: int):
-    return models.Video.filter(models.Video == video_id).first()
+    return models.Video.filter(models.Video.id == video_id).first()
+
+
+def get_all_videos():
+    return models.Video.select()
+
+
+def rate_video(user_id: int, video_id: int, user_reaction: Reaction):
+    try:
+        db_reaction = models.Reaction.get(
+            (models.Reaction.author_id == user_id) &
+            (models.Reaction.video_id == video_id))
+    except models.Reaction.DoesNotExist:
+        models.Reaction.create(
+            author_id=user_id, video_id=video_id, is_like=user_reaction == Reaction.LIKE,
+            is_dislike=user_reaction == Reaction.DISLIKE
+        )
+    else:
+        if user_reaction == Reaction.LIKE:
+            db_reaction.is_like = True
+            db_reaction.is_dislike = False
+        else:
+            db_reaction.is_like = False
+            db_reaction.is_dislike = True
+        db_reaction.save()
+
+
+def get_video_number_of_likes_and_dislikes(video_id: int) -> schemas.VideoReactionsInf:
+    number_of_likes = models.Reaction.select().where(
+        (models.Reaction.video_id == video_id) & (models.Reaction.is_like == Reaction.LIKE)).count()
+    number_of_dislike = models.Reaction.select().where(
+        (models.Reaction.video_id == video_id) & (models.Reaction.is_dislike == Reaction.DISLIKE)).count()
+    return schemas.VideoReactionsInf(number_of_likes=number_of_likes,
+                                     number_of_dislikes=number_of_dislike)
 
 
 def delete_video(video_id: int):

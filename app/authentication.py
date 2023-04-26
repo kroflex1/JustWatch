@@ -7,7 +7,7 @@ ALGORITHM = "HS256"
 
 
 class TokenManager:
-    ACCESS_TOKEN_EXPIRE_MINUTES = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES = 15
     REFRESH_TOKEN_EXPIRE_DAYS = 60
 
     @staticmethod

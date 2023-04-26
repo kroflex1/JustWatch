@@ -16,12 +16,12 @@ class AccountNotFound(jsonrpc.BaseError):
     MESSAGE = 'Account not found'
 
 
-class TokenError(jsonrpc.BaseModel):
+class TokenError(jsonrpc.BaseError):
     CODE = 1000
     MESSAGE = 'Invalid token'
 
 
-class TokenExpireError(jsonrpc.BaseModel):
+class TokenExpireError(jsonrpc.BaseError):
     CODE = 1000
     MESSAGE = 'The token expired'
 
@@ -36,16 +36,20 @@ class RefreshTokenMissingError(jsonrpc.BaseError):
     MESSAGE = 'The refresh token is missing in header'
 
 
-class TokenSubError(jsonrpc.BaseModel):
+class TokenSubError(jsonrpc.BaseError):
     CODE = 1000
     MESSAGE = 'Token sub empty'
 
 
-class NoFileError():
+class NoFileError(jsonrpc.BaseError):
     CODE = 5000
     MESSAGE = 'No file'
 
 
-class VideoNameEmptyError(jsonrpc.BaseModel):
+class VideoNameEmptyError(jsonrpc.BaseError):
     CODE = 5000
     MESSAGE = 'Video name is empty'
+
+class VideoNotExist(jsonrpc.BaseError):
+    CODE = 5000
+    MESSAGE = 'No video with this id found'

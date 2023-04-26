@@ -19,7 +19,15 @@ class User(BaseModel):
 class Video(BaseModel):
     video_name = CharField(index=True)
     author_id = ForeignKeyField(User, backref="videos")
-    description = CharField(default='')
+    description = TextField(default='')
     creation_time = DateTimeField(default=datetime.datetime.now)
-    number_of_likes = IntegerField(default=0)
-    number_of_dislikes = IntegerField(default=0)
+
+
+class Reaction(BaseModel):
+    video_id = ForeignKeyField(Video, backref='reactions')
+    user_id = ForeignKeyField(User, backref='reactions')
+    is_like = BooleanField(default=False)
+    is_dislike = BooleanField(default=False)
+
+    class Meta:
+        primary_key = CompositeKey('video_id', 'user_id')

@@ -14,17 +14,30 @@ class PeeweeGetterDict(GetterDict):
         return res
 
 
-class VideoBase(BaseModel):
+class VideoReactionsInf(BaseModel):
+    number_of_likes: int = Field(537)
+    number_of_dislikes: int = Field(136)
+
+
+class VideoCreate(BaseModel):
     video_name: str = Field(example="Top 10 cats")
     description: str = Field(example="Videos about the funniest cats")
 
 
-class Video(VideoBase):
+class VideoInf(VideoCreate):
     id: int = Field(example=1)
+
+class VideoShow(VideoCreate):
+    video_url: str = Field()
+    reactionsInf: VideoReactionsInf
+
+
+class Video(VideoInf):
     author_id: int = Field(example=523)
     number_of_likes: int = Field(example=11)
     number_of_dislikes: int = Field(example=6)
     creation_time: datetime
+    reactions: List[VideoReactionsInf]
 
     class Config:
         orm_mode = True
