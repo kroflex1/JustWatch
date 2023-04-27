@@ -108,7 +108,14 @@ def get_video_show_inf_by_id(user: Annotated[schemas.User, Depends(get_current_u
     video_name, description = video_db.video_name, video_db.description
     video_url = video.VideoManager.get_video_url_by_id(video_id)
     reactions = crud.get_video_number_of_likes_and_dislikes(video_id)
-    return schemas.VideoShow(video_url=video_url, reactionsInf=reactions, video_name=video_name, description=description)
+    user_reaction = crud.get_user_reaction_to_video(user.id, video_id)
+    return schemas.VideoShow(video_url=video_url, reactionsInf=reactions, video_name=video_name,
+                             description=description, user_reaction=user_reaction)
+
+
+@api.method(dependencies=[Depends(get_db)])
+def rate_video(user: Annotated[schemas.User, Depends(get_current_user)], video_id: int, user_reaction: crud.Reaction):
+    crud.rate_video(user_id=user.id, video_id=video_id, user_reaction=user_reaction)
 
 
 app = jsonrpc.API()

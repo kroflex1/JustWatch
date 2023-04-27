@@ -15,8 +15,9 @@ class PeeweeGetterDict(GetterDict):
 
 
 class VideoReactionsInf(BaseModel):
-    number_of_likes: int = Field(537)
-    number_of_dislikes: int = Field(136)
+    number_of_likes: int = Field(example=537)
+    number_of_dislikes: int = Field(example=136)
+
 
 
 class VideoCreate(BaseModel):
@@ -27,9 +28,11 @@ class VideoCreate(BaseModel):
 class VideoInf(VideoCreate):
     id: int = Field(example=1)
 
+
 class VideoShow(VideoCreate):
     video_url: str = Field()
     reactionsInf: VideoReactionsInf
+    user_reaction: str = Field(example='like')
 
 
 class Video(VideoInf):

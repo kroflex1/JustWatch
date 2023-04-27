@@ -24,10 +24,10 @@ class Video(BaseModel):
 
 
 class Reaction(BaseModel):
-    video_id = ForeignKeyField(Video, backref='reactions')
-    user_id = ForeignKeyField(User, backref='reactions')
+    video = ForeignKeyField(Video, backref='reactions')
+    user = ForeignKeyField(User, backref='reactions')
     is_like = BooleanField(default=False)
     is_dislike = BooleanField(default=False)
 
     class Meta:
-        primary_key = CompositeKey('video_id', 'user_id')
+        primary_key = CompositeKey('video', 'user')

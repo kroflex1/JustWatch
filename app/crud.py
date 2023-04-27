@@ -5,9 +5,10 @@ from enum import Enum
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-class Reaction(Enum):
-    LIKE = 1
-    DISLIKE = 2
+class Reaction(str, Enum):
+    LIKE = 'like'
+    DISLIKE = 'dislike'
+    NEUTRAL = 'neutral'
 
 
 def get_user_by_id(user_id: int):
@@ -67,32 +68,51 @@ def get_all_videos():
 
 
 def rate_video(user_id: int, video_id: int, user_reaction: Reaction):
+    if get_video_by_id(video_id) is None:
+        raise errors.VideoNotExist
+    if get_user_by_id(user_id) is None:
+        raise errors.AccountNotFound
+
     try:
         db_reaction = models.Reaction.get(
-            (models.Reaction.author_id == user_id) &
-            (models.Reaction.video_id == video_id))
+            (models.Reaction.user == user_id) &
+            (models.Reaction.video == video_id))
     except models.Reaction.DoesNotExist:
-        models.Reaction.create(
-            author_id=user_id, video_id=video_id, is_like=user_reaction == Reaction.LIKE,
+        db_reaction = models.Reaction.create(
+            user_id=user_id, video_id=video_id, is_like=user_reaction == Reaction.LIKE,
             is_dislike=user_reaction == Reaction.DISLIKE
         )
     else:
-        if user_reaction == Reaction.LIKE:
+        if user_reaction == Reaction.NEUTRAL:
+            db_reaction.is_like = False
+            db_reaction.is_dislike = False
+        elif user_reaction == Reaction.LIKE:
             db_reaction.is_like = True
             db_reaction.is_dislike = False
         else:
             db_reaction.is_like = False
             db_reaction.is_dislike = True
         db_reaction.save()
+    return db_reaction
 
 
 def get_video_number_of_likes_and_dislikes(video_id: int) -> schemas.VideoReactionsInf:
     number_of_likes = models.Reaction.select().where(
-        (models.Reaction.video_id == video_id) & (models.Reaction.is_like == Reaction.LIKE)).count()
+        (models.Reaction.video == video_id) & (models.Reaction.is_like == Reaction.LIKE)).count()
     number_of_dislike = models.Reaction.select().where(
-        (models.Reaction.video_id == video_id) & (models.Reaction.is_dislike == Reaction.DISLIKE)).count()
+        (models.Reaction.video == video_id) & (models.Reaction.is_dislike == Reaction.DISLIKE)).count()
+
     return schemas.VideoReactionsInf(number_of_likes=number_of_likes,
                                      number_of_dislikes=number_of_dislike)
+
+
+def get_user_reaction_to_video(user_id: int, video_id: int) -> str:
+    reaction_db = models.Reaction.get((models.Reaction.user == user_id) & (models.Reaction.video == video_id))
+    if reaction_db.is_like:
+        return 'like'
+    if reaction_db.is_dislike:
+        return 'dislike'
+    return 'neutral'
 
 
 def delete_video(video_id: int):
