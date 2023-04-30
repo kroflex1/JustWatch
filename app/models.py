@@ -31,3 +31,10 @@ class Reaction(BaseModel):
 
     class Meta:
         primary_key = CompositeKey('video', 'user')
+
+class Comment(BaseModel):
+    video_id = ForeignKeyField(Video, backref='comments')
+    author_id = ForeignKeyField(User, backref='comments')
+    text = TextField()
+    published_at = DateTimeField(default=datetime.datetime.now)
+

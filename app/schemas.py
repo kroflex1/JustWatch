@@ -1,4 +1,5 @@
 from typing import Any, List
+from datetime import date
 
 import peewee
 from pydantic import BaseModel, Field
@@ -19,6 +20,17 @@ class VideoReactionsInf(BaseModel):
     number_of_dislikes: int = Field(example=136)
 
 
+class CommentCreate(BaseModel):
+    video_id: int
+    author_id: int
+    text: str = Field(example='I like this video')
+
+
+class CommentShow(BaseModel):
+    author_name: str = Field(example='Kroflex')
+    text: str = Field(example='I like this video')
+    published_at: date = Field(example='2008-09-15')
+
 
 class VideoCreate(BaseModel):
     video_name: str = Field(example="Top 10 cats")
@@ -32,6 +44,7 @@ class VideoInf(VideoCreate):
 class VideoShow(VideoCreate):
     video_url: str = Field()
     reactionsInf: VideoReactionsInf
+    comments: list[CommentShow]
     user_reaction: str = Field(example='like')
 
 

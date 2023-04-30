@@ -10,7 +10,7 @@ from .database import db_state_default
 
 logger = logging.getLogger(__name__)
 database.db.connect()
-database.db.create_tables([models.User, models.Video, models.Reaction])
+database.db.create_tables([models.User, models.Video, models.Reaction, models.Comment])
 database.db.close()
 
 
@@ -109,13 +109,19 @@ def get_video_show_inf_by_id(user: Annotated[schemas.User, Depends(get_current_u
     video_url = video.VideoManager.get_video_url_by_id(video_id)
     reactions = crud.get_video_number_of_likes_and_dislikes(video_id)
     user_reaction = crud.get_user_reaction_to_video(user.id, video_id)
+    comments = crud.get_comments_show_inf_from_video(video_id)
     return schemas.VideoShow(video_url=video_url, reactionsInf=reactions, video_name=video_name,
-                             description=description, user_reaction=user_reaction)
+                             description=description, user_reaction=user_reaction, comments=comments)
 
 
 @api.method(dependencies=[Depends(get_db)])
 def rate_video(user: Annotated[schemas.User, Depends(get_current_user)], video_id: int, user_reaction: crud.Reaction):
     crud.rate_video(user_id=user.id, video_id=video_id, user_reaction=user_reaction)
+
+@api.method(dependencies=[Depends(get_db)])
+def add_comment_to_video(user: Annotated[schemas.User, Depends(get_current_user)], video_id:int, comment_text: str):
+    comment_inf = schemas.CommentCreate(video_id = video_id, author_id = user.id, text = comment_text)
+    crud.create_comment(comment_inf)
 
 
 app = jsonrpc.API()

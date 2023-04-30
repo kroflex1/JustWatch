@@ -115,6 +115,20 @@ def get_user_reaction_to_video(user_id: int, video_id: int) -> str:
     return 'neutral'
 
 
+def create_comment(comment_inf: schemas.CommentCreate):
+    comment_db = models.Comment(video_id=comment_inf.video_id, author_id=comment_inf.author_id, text=comment_inf.text)
+    comment_db.save()
+    return comment_db
+
+def get_comments_show_inf_from_video(video_id:int) -> list[schemas.CommentShow]:
+    comments = models.Video.get(models.Video.id == video_id).comments
+    result = []
+    for comment in comments:
+        author_name = models.User.get(models.User.id == comment.author_id).username
+        result.append(schemas.CommentShow(author_name = author_name, text=comment.text, published_at = comment.published_at))
+    return result
+
+
 def delete_video(video_id: int):
     q = models.Video.delete().where(models.Video.id == video_id)
     q.execute()
