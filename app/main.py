@@ -96,8 +96,10 @@ def get_current_user_information(user: Annotated[schemas.User, Depends(get_curre
 def get_all_videos_inf(user: Annotated[schemas.User, Depends(get_current_user)]) -> list[schemas.VideoInf]:
     videos = []
     for video_inf in crud.get_all_videos():
+        preview_image_url = video.VideoManager.get_video_image_preview_url(video_inf.id)
         videos.append(
-            schemas.VideoInf(id=video_inf.id, video_name=video_inf.video_name, description=video_inf.description))
+            schemas.VideoInf(id=video_inf.id, video_name=video_inf.video_name, description=video_inf.description,
+                             preview_image_irl=preview_image_url))
     return videos
 
 
@@ -118,10 +120,17 @@ def get_video_show_inf_by_id(user: Annotated[schemas.User, Depends(get_current_u
 def rate_video(user: Annotated[schemas.User, Depends(get_current_user)], video_id: int, user_reaction: crud.Reaction):
     crud.rate_video(user_id=user.id, video_id=video_id, user_reaction=user_reaction)
 
+
 @api.method(dependencies=[Depends(get_db)])
-def add_comment_to_video(user: Annotated[schemas.User, Depends(get_current_user)], video_id:int, comment_text: str):
-    comment_inf = schemas.CommentCreate(video_id = video_id, author_id = user.id, text = comment_text)
+def add_comment_to_video(user: Annotated[schemas.User, Depends(get_current_user)], video_id: int, comment_text: str):
+    comment_inf = schemas.CommentCreate(video_id=video_id, author_id=user.id, text=comment_text)
     crud.create_comment(comment_inf)
+
+
+@api.method(dependencies=[Depends(get_db)])
+def get_comments_from_video(user: Annotated[schemas.User, Depends(get_current_user)], video_id: int) -> list[
+    schemas.CommentShow]:
+    return crud.get_comments_show_inf_from_video(video_id)
 
 
 app = jsonrpc.API()
@@ -140,9 +149,13 @@ app.add_middleware(
 
 @app.post("/api/upload-video-file", dependencies=[Depends(get_db)])
 async def upload_video_file(user: Annotated[schemas.User, Depends(get_current_user)], video_name: str,
+                            video_data: UploadFile,
                             video_descr: str | None = None,
-                            video_data: UploadFile | None = None) -> int:
+                            preview_image_data: UploadFile | None = None
+                            ) -> int:
     if not video_data:
         raise errors.NoFileError
-    db_video = video.VideoManager().upload_video(video_data.file, video_name, video_descr, user.id)
+    db_video = video.VideoManager().upload_video(video_file=video_data.file,
+                                                 video_image_preview=preview_image_data.file, video_name=video_name,
+                                                 video_description=video_descr, author_id=user.id)
     return int(db_video.id)

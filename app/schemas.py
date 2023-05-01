@@ -39,6 +39,7 @@ class VideoCreate(BaseModel):
 
 class VideoInf(VideoCreate):
     id: int = Field(example=1)
+    preview_image_irl: str | None
 
 
 class VideoShow(VideoCreate):

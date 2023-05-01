@@ -107,12 +107,15 @@ def get_video_number_of_likes_and_dislikes(video_id: int) -> schemas.VideoReacti
 
 
 def get_user_reaction_to_video(user_id: int, video_id: int) -> str:
-    reaction_db = models.Reaction.get((models.Reaction.user == user_id) & (models.Reaction.video == video_id))
-    if reaction_db.is_like:
-        return 'like'
-    if reaction_db.is_dislike:
-        return 'dislike'
-    return 'neutral'
+    try:
+        reaction_db = models.Reaction.get((models.Reaction.user == user_id) & (models.Reaction.video == video_id))
+        if reaction_db.is_like:
+            return 'like'
+        if reaction_db.is_dislike:
+            return 'dislike'
+        return 'neutral'
+    except:
+        return 'neutral'
 
 
 def create_comment(comment_inf: schemas.CommentCreate):
