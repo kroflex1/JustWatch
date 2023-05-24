@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import crud, schemas, errors, authentication, database, models, video
+from . import crud, schemas, errors, authentication, database, models, video, avatar
 from .database import db_state_default
 
 logger = logging.getLogger(__name__)
@@ -105,9 +105,14 @@ def get_user_profile(user: Annotated[schemas.User, Depends(get_current_user)],
             schemas.VideoInf(video_name=user_video.video_name, description=user_video.description, id=user_video.id,
                              preview_image_url=preview_image_url))
     number_of_subscribers = user_db.subscribers.count()
+    number_of_videos = len(videos_show_inf)
+    user_avatar_url = avatar.AvatarManager.get_avatar_url(user_id)
+
     return schemas.UserProfileInformation(username=user.username,
                                           number_of_subscribers=number_of_subscribers,
-                                          user_videos=videos_show_inf)
+                                          number_of_videos=number_of_videos,
+                                          user_videos=videos_show_inf,
+                                          user_avatar_url=user_avatar_url)
 
 
 @api.method(dependencies=[Depends(get_db)])
@@ -115,9 +120,10 @@ def get_all_videos_inf(user: Annotated[schemas.User, Depends(get_current_user)])
     videos = []
     for video_inf in crud.get_all_videos():
         preview_image_url = video.VideoManager.get_video_image_preview_url(video_inf.id)
+        author_name = crud.get_user_by_id(video_inf.author_id).username
         videos.append(
             schemas.VideoInf(id=video_inf.id, video_name=video_inf.video_name, description=video_inf.description,
-                             preview_image_url=preview_image_url))
+                             preview_image_url=preview_image_url, author_name=author_name, published_at=video_inf.creation_time))
     return videos
 
 
@@ -166,6 +172,11 @@ def is_subscribed_to_author(user: Annotated[schemas.User, Depends(get_current_us
     return crud.is_user_subscribed_to_author(user_id=user.id, author_id=author_id)
 
 
+@api.method(dependencies=[Depends(get_db)])
+def get_user_avatar_url(user: Annotated[schemas.User, Depends(get_current_user)], user_id: int) -> str:
+    return avatar.AvatarManager.get_avatar_url(user_id)
+
+
 app = jsonrpc.API()
 app.bind_entrypoint(api)
 
@@ -181,14 +192,21 @@ app.add_middleware(
 
 
 @app.post("/api/upload-video-file", dependencies=[Depends(get_db)])
-async def upload_video_file(user: Annotated[schemas.User, Depends(get_current_user)], video_name: str,
-                            video_data: UploadFile,
-                            video_descr: str | None = None,
-                            preview_image_data: UploadFile | None = None
-                            ) -> int:
+def upload_video_file(user: Annotated[schemas.User, Depends(get_current_user)], video_name: str,
+                      video_data: UploadFile,
+                      video_descr: str | None = None,
+                      preview_image_data: UploadFile | None = None
+                      ) -> int:
     if not video_data:
         raise errors.NoFileError
     db_video = video.VideoManager().upload_video(video_file=video_data.file,
                                                  video_image_preview=preview_image_data.file, video_name=video_name,
                                                  video_description=video_descr, author_id=user.id)
     return int(db_video.id)
+
+
+@app.post("/api/upload-avatar", dependencies=[Depends(get_db)])
+def upload_avatar(user: Annotated[schemas.User, Depends(get_current_user)], avatar_data: UploadFile):
+    if not avatar_data:
+        raise errors.NoFileError
+    avatar.AvatarManager.upload_avatar(avatar_file=avatar_data.file, user_id=user.id)

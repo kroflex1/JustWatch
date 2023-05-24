@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 from pydantic.utils import GetterDict
 
 
-
 class PeeweeGetterDict(GetterDict):
     def get(self, key: Any, default: Any = None):
         res = getattr(self._obj, key, default)
@@ -40,6 +39,9 @@ class VideoCreate(BaseModel):
 class VideoInf(VideoCreate):
     id: int = Field(example=1)
     preview_image_url: str | None
+    author_name: str = Field(example="SuperCat")
+    published_at: datetime = Field(example='2008-09-15T15:53:00+05:00')
+
 
 
 class VideoShow(VideoCreate):
@@ -78,7 +80,9 @@ class UserIn(BaseModel):
 class UserProfileInformation(BaseModel):
     username: str = Field(example="superCar")
     number_of_subscribers: int = Field(example=245)
+    number_of_videos: int = Field(example=21)
     user_videos: list[VideoInf]
+    user_avatar_url: str
 
 
 class User(UserBase):
