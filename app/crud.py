@@ -123,15 +123,46 @@ def create_comment(comment_inf: schemas.CommentCreate):
     comment_db.save()
     return comment_db
 
-def get_comments_show_inf_from_video(video_id:int) -> list[schemas.CommentShow]:
+
+def get_comments_show_inf_from_video(video_id: int) -> list[schemas.CommentShow]:
     comments = models.Video.get(models.Video.id == video_id).comments
     result = []
     for comment in comments:
         author_name = models.User.get(models.User.id == comment.author_id).username
-        result.append(schemas.CommentShow(author_name = author_name, text=comment.text, published_at = comment.published_at))
+        result.append(
+            schemas.CommentShow(author_name=author_name, text=comment.text, published_at=comment.published_at))
     return result
 
 
 def delete_video(video_id: int):
     q = models.Video.delete().where(models.Video.id == video_id)
     q.execute()
+
+
+def subscribe(subscriber_id: int, author_id: int):
+    if subscriber_id == author_id:
+        raise errors.SubscribeToYourself
+    try:
+        models.Subscriber.create(subscriber=subscriber_id, author=author_id)
+    except:
+        raise errors.AlreadySubscribed
+
+
+def unsubscribe(subscriber_id: int, author_id: int):
+    if subscriber_id == author_id:
+        raise errors.SubscribeToYourself
+    try:
+        q = models.Subscriber.delete().where((models.Subscriber.subscriber == subscriber_id) & (models.Subscriber.author == author_id))
+        q.execute()
+    except:
+        raise errors.AlreadySubscribed
+
+def is_user_subscribed_to_author(user_id:int, author_id:int):
+    if user_id == author_id:
+        return False
+    try:
+        models.Subscriber.get((models.Subscriber.subscriber == user_id) & (models.Subscriber.author == author_id))
+    except:
+        return False
+    else:
+        return True

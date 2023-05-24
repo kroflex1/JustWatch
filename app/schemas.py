@@ -1,10 +1,10 @@
 from typing import Any, List
-from datetime import date
+from datetime import datetime
 
 import peewee
 from pydantic import BaseModel, Field
 from pydantic.utils import GetterDict
-from datetime import datetime
+
 
 
 class PeeweeGetterDict(GetterDict):
@@ -29,7 +29,7 @@ class CommentCreate(BaseModel):
 class CommentShow(BaseModel):
     author_name: str = Field(example='Kroflex')
     text: str = Field(example='I like this video')
-    published_at: date = Field(example='2008-09-15')
+    published_at: datetime = Field(example='2008-09-15T15:53:00+05:00')
 
 
 class VideoCreate(BaseModel):
@@ -39,7 +39,7 @@ class VideoCreate(BaseModel):
 
 class VideoInf(VideoCreate):
     id: int = Field(example=1)
-    preview_image_irl: str | None
+    preview_image_url: str | None
 
 
 class VideoShow(VideoCreate):
@@ -73,6 +73,12 @@ class UserCreate(UserBase):
 class UserIn(BaseModel):
     email: str = Field(example="supercat@gamil.com")
     password: str = Field(example="superPassword")
+
+
+class UserProfileInformation(BaseModel):
+    username: str = Field(example="superCar")
+    number_of_subscribers: int = Field(example=245)
+    user_videos: list[VideoInf]
 
 
 class User(UserBase):

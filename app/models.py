@@ -38,3 +38,9 @@ class Comment(BaseModel):
     text = TextField()
     published_at = DateTimeField(default=datetime.datetime.now)
 
+class Subscriber(BaseModel):
+    subscriber = ForeignKeyField(User, backref='subscribedToUsers')
+    author = ForeignKeyField(User, backref='subscribers')
+    class Meta:
+        primary_key = CompositeKey('subscriber', 'author')
+

@@ -10,7 +10,8 @@ from .database import db_state_default
 
 logger = logging.getLogger(__name__)
 database.db.connect()
-database.db.create_tables([models.User, models.Video, models.Reaction, models.Comment])
+# database.db.drop_tables([models.User, models.Video, models.Reaction, models.Comment])
+database.db.create_tables([models.User, models.Video, models.Reaction, models.Comment, models.Subscriber])
 database.db.close()
 
 
@@ -93,13 +94,30 @@ def get_current_user_information(user: Annotated[schemas.User, Depends(get_curre
 
 
 @api.method(dependencies=[Depends(get_db)])
+def get_user_profile(user: Annotated[schemas.User, Depends(get_current_user)],
+                     user_id: int) -> schemas.UserProfileInformation:
+    user_db = models.User.get_by_id(user_id)
+    user_videos_db = user_db.videos
+    videos_show_inf = []
+    for user_video in user_videos_db:
+        preview_image_url = video.VideoManager.get_video_image_preview_url(user_video.id)
+        videos_show_inf.append(
+            schemas.VideoInf(video_name=user_video.video_name, description=user_video.description, id=user_video.id,
+                             preview_image_url=preview_image_url))
+    number_of_subscribers = user_db.subscribers.count()
+    return schemas.UserProfileInformation(username=user.username,
+                                          number_of_subscribers=number_of_subscribers,
+                                          user_videos=videos_show_inf)
+
+
+@api.method(dependencies=[Depends(get_db)])
 def get_all_videos_inf(user: Annotated[schemas.User, Depends(get_current_user)]) -> list[schemas.VideoInf]:
     videos = []
     for video_inf in crud.get_all_videos():
         preview_image_url = video.VideoManager.get_video_image_preview_url(video_inf.id)
         videos.append(
             schemas.VideoInf(id=video_inf.id, video_name=video_inf.video_name, description=video_inf.description,
-                             preview_image_irl=preview_image_url))
+                             preview_image_url=preview_image_url))
     return videos
 
 
@@ -131,6 +149,21 @@ def add_comment_to_video(user: Annotated[schemas.User, Depends(get_current_user)
 def get_comments_from_video(user: Annotated[schemas.User, Depends(get_current_user)], video_id: int) -> list[
     schemas.CommentShow]:
     return crud.get_comments_show_inf_from_video(video_id)
+
+
+@api.method(dependencies=[Depends(get_db)])
+def subscribe(user: Annotated[schemas.User, Depends(get_current_user)], author_id: int):
+    return crud.subscribe(subscriber_id=user.id, author_id=author_id)
+
+
+@api.method(dependencies=[Depends(get_db)])
+def unsubscribe(user: Annotated[schemas.User, Depends(get_current_user)], author_id: int):
+    return crud.unsubscribe(subscriber_id=user.id, author_id=author_id)
+
+
+@api.method(dependencies=[Depends(get_db)])
+def is_subscribed_to_author(user: Annotated[schemas.User, Depends(get_current_user)], author_id: int) -> bool:
+    return crud.is_user_subscribed_to_author(user_id=user.id, author_id=author_id)
 
 
 app = jsonrpc.API()

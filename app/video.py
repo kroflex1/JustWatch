@@ -61,12 +61,13 @@ class VideoManager:
             endpoint_url='https://storage.yandexcloud.net'
         )
         try:
-            s3.get_object(Bucket=VideoManager.__BUCKET_NAME_FOR_PREVIEWS, Key=str(video_id))
-        except ClientError:
-            return None
-        else:
             response = s3.generate_presigned_url('get_object',
                                                  Params={'Bucket': VideoManager.__BUCKET_NAME_FOR_PREVIEWS,
                                                          'Key': str(video_id)},
                                                  ExpiresIn=expire)
             return response
+        except ClientError:
+            return None
+
+
+
