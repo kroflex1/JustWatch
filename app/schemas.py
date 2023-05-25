@@ -41,14 +41,17 @@ class VideoInf(VideoCreate):
     preview_image_url: str | None
     author_name: str = Field(example="SuperCat")
     published_at: datetime = Field(example='2008-09-15T15:53:00+05:00')
-
+    number_of_views: int = Field(example='3412')
 
 
 class VideoShow(VideoCreate):
     video_url: str = Field()
+    author_id: int = Field(example=1)
     reactionsInf: VideoReactionsInf
     comments: list[CommentShow]
     user_reaction: str = Field(example='like')
+    published_at: datetime = Field(example='2008-09-15T15:53:00+05:00')
+    number_of_views: int = Field(example='3412')
 
 
 class Video(VideoInf):
@@ -72,9 +75,14 @@ class UserCreate(UserBase):
     password: str = Field(example="superPassword")
 
 
-class UserIn(BaseModel):
+class UserInf(BaseModel):
     email: str = Field(example="supercat@gamil.com")
     password: str = Field(example="superPassword")
+
+class UserChannelInformation(BaseModel):
+    username: str = Field(example="SuperCat")
+    number_of_subscribers: int = Field(example=245)
+    user_avatar_url: str
 
 
 class UserProfileInformation(BaseModel):

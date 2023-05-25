@@ -11,7 +11,8 @@ from .database import db_state_default
 logger = logging.getLogger(__name__)
 database.db.connect()
 # database.db.drop_tables([models.User, models.Video, models.Reaction, models.Comment])
-database.db.create_tables([models.User, models.Video, models.Reaction, models.Comment, models.Subscriber])
+database.db.create_tables(
+    [models.User, models.Video, models.Reaction, models.Comment, models.Subscriber, models.Viewer])
 database.db.close()
 
 
@@ -78,7 +79,7 @@ def register_user(user_data: schemas.UserCreate = Body()) -> schemas.Tokens:
 
 
 @api.method(dependencies=[Depends(get_db)])
-def login(user_data: schemas.UserIn = Body()) -> schemas.Tokens:
+def login(user_data: schemas.UserInf = Body()) -> schemas.Tokens:
     user_db = crud.get_user_by_email_and_password(email=user_data.email, password=user_data.password)
     if user_db is None:
         raise errors.AccountNotFound
@@ -101,9 +102,12 @@ def get_user_profile(user: Annotated[schemas.User, Depends(get_current_user)],
     videos_show_inf = []
     for user_video in user_videos_db:
         preview_image_url = video.VideoManager.get_video_image_preview_url(user_video.id)
+        author_name = user_db.username
+        number_of_views = crud.get_number_of_views(user_video.id)
         videos_show_inf.append(
             schemas.VideoInf(video_name=user_video.video_name, description=user_video.description, id=user_video.id,
-                             preview_image_url=preview_image_url))
+                             preview_image_url=preview_image_url, author_name=author_name,
+                             published_at=user_video.creation_time, number_of_views=number_of_views))
     number_of_subscribers = user_db.subscribers.count()
     number_of_videos = len(videos_show_inf)
     user_avatar_url = avatar.AvatarManager.get_avatar_url(user_id)
@@ -121,9 +125,11 @@ def get_all_videos_inf(user: Annotated[schemas.User, Depends(get_current_user)])
     for video_inf in crud.get_all_videos():
         preview_image_url = video.VideoManager.get_video_image_preview_url(video_inf.id)
         author_name = crud.get_user_by_id(video_inf.author_id).username
+        number_of_views = crud.get_number_of_views(video_inf.id)
         videos.append(
             schemas.VideoInf(id=video_inf.id, video_name=video_inf.video_name, description=video_inf.description,
-                             preview_image_url=preview_image_url, author_name=author_name, published_at=video_inf.creation_time))
+                             preview_image_url=preview_image_url, author_name=author_name,
+                             published_at=video_inf.creation_time, number_of_views=number_of_views))
     return videos
 
 
@@ -131,13 +137,31 @@ def get_all_videos_inf(user: Annotated[schemas.User, Depends(get_current_user)])
 def get_video_show_inf_by_id(user: Annotated[schemas.User, Depends(get_current_user)],
                              video_id: int) -> schemas.VideoShow:
     video_db = crud.get_video_by_id(video_id)
+    author_id = video_db.author_id.id
     video_name, description = video_db.video_name, video_db.description
     video_url = video.VideoManager.get_video_url_by_id(video_id)
     reactions = crud.get_video_number_of_likes_and_dislikes(video_id)
     user_reaction = crud.get_user_reaction_to_video(user.id, video_id)
     comments = crud.get_comments_show_inf_from_video(video_id)
+    number_of_views = crud.get_number_of_views(video_id)
+    published_at = video_db.creation_time
+
     return schemas.VideoShow(video_url=video_url, reactionsInf=reactions, video_name=video_name,
-                             description=description, user_reaction=user_reaction, comments=comments)
+                             description=description, user_reaction=user_reaction, comments=comments,
+                             number_of_views=number_of_views, published_at=published_at, author_id=author_id)
+
+
+@api.method(dependencies=[Depends(get_db)])
+def get_user_channel_information(user: Annotated[schemas.User, Depends(get_current_user)], user_id: int) -> schemas.UserChannelInformation:
+    user_db = crud.get_user_by_id(user_id)
+    user_avatar_url = avatar.AvatarManager.get_avatar_url(user_id)
+    return schemas.UserChannelInformation(username=user_db.username, number_of_subscribers=user_db.subscribers.count(),
+                                          user_avatar_url=user_avatar_url)
+
+
+@api.method(dependencies=[Depends(get_db)])
+def watch_video(user: Annotated[schemas.User, Depends(get_current_user)], video_id: int):
+    crud.watch_video(user_id=user.id, video_id=video_id)
 
 
 @api.method(dependencies=[Depends(get_db)])
@@ -170,11 +194,6 @@ def unsubscribe(user: Annotated[schemas.User, Depends(get_current_user)], author
 @api.method(dependencies=[Depends(get_db)])
 def is_subscribed_to_author(user: Annotated[schemas.User, Depends(get_current_user)], author_id: int) -> bool:
     return crud.is_user_subscribed_to_author(user_id=user.id, author_id=author_id)
-
-
-@api.method(dependencies=[Depends(get_db)])
-def get_user_avatar_url(user: Annotated[schemas.User, Depends(get_current_user)], user_id: int) -> str:
-    return avatar.AvatarManager.get_avatar_url(user_id)
 
 
 app = jsonrpc.API()

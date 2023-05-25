@@ -8,6 +8,7 @@ class BaseModel(Model):
         database = db
 
 
+
 class User(BaseModel):
     email = CharField(unique=True, index=True)
     username = CharField(unique=True, index=True)
@@ -44,3 +45,8 @@ class Subscriber(BaseModel):
     class Meta:
         primary_key = CompositeKey('subscriber', 'author')
 
+class Viewer(BaseModel):
+    viewer = ForeignKeyField(User, backref="viewedVideos")
+    video = ForeignKeyField(Video, backref="views")
+    class Meta:
+        primary_key = CompositeKey('viewer', 'video')

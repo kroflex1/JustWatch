@@ -50,21 +50,31 @@ class VideoNameEmptyError(jsonrpc.BaseError):
     CODE = 5000
     MESSAGE = 'Video name is empty'
 
+
 class VideoNotExist(jsonrpc.BaseError):
     CODE = 5000
     MESSAGE = 'No video with this id found'
 
-class AlreadySubscribed(jsonrpc.BaseError):
-    CODE = 7000
-    MESSAGE = 'User already subscribed to author'
 
 class AlreadySubscribed(jsonrpc.BaseError):
     CODE = 7000
     MESSAGE = 'User already subscribed to author'
+
+
+class AlreadySubscribed(jsonrpc.BaseError):
+    CODE = 7000
+    MESSAGE = 'User already subscribed to author'
+
 
 class AlreadyUnsubscribed(jsonrpc.BaseError):
     CODE = 7000
     MESSAGE = 'User already unsubscribed to author'
+
+
+class AlreadyWatched(jsonrpc.BaseError):
+    CODE = 7000
+    MESSAGE = 'User already watched this video'
+
 
 class SubscribeToYourself(jsonrpc.BaseError):
     CODE = 7000

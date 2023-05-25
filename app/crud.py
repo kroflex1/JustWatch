@@ -166,3 +166,13 @@ def is_user_subscribed_to_author(user_id:int, author_id:int):
         return False
     else:
         return True
+
+def watch_video(user_id:int, video_id:int):
+    try:
+        models.Viewer.create(viewer=user_id, video=video_id)
+    except:
+        raise errors.AlreadyWatched
+
+def get_number_of_views(video_id:int):
+    video_db = models.Video.get(video_id==video_id)
+    return video_db.views.count()
