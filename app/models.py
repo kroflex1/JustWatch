@@ -48,5 +48,6 @@ class Subscriber(BaseModel):
 class Viewer(BaseModel):
     viewer = ForeignKeyField(User, backref="viewedVideos")
     video = ForeignKeyField(Video, backref="views")
+    viewing_time = DateTimeField(default=datetime.datetime.now)
     class Meta:
         primary_key = CompositeKey('viewer', 'video')

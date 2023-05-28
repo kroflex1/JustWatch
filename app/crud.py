@@ -1,6 +1,7 @@
 from . import models, schemas, errors
 from passlib.context import CryptContext
 from enum import Enum
+import datetime
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -125,7 +126,7 @@ def create_comment(comment_inf: schemas.CommentCreate):
 
 
 def get_comments_show_inf_from_video(video_id: int) -> list[schemas.CommentShow]:
-    comments = models.Video.get(models.Video.id == video_id).comments
+    comments = models.Video.get_by_id(video_id).comments
     result = []
     for comment in comments:
         author_name = models.User.get(models.User.id == comment.author_id).username
@@ -134,30 +135,27 @@ def get_comments_show_inf_from_video(video_id: int) -> list[schemas.CommentShow]
     return result
 
 
-def delete_video(video_id: int):
-    q = models.Video.delete().where(models.Video.id == video_id)
-    q.execute()
-
-
 def subscribe(subscriber_id: int, author_id: int):
     if subscriber_id == author_id:
         raise errors.SubscribeToYourself
     try:
         models.Subscriber.create(subscriber=subscriber_id, author=author_id)
     except:
-        raise errors.AlreadySubscribed
+        raise errors.SubscribedError
 
 
 def unsubscribe(subscriber_id: int, author_id: int):
     if subscriber_id == author_id:
         raise errors.SubscribeToYourself
     try:
-        q = models.Subscriber.delete().where((models.Subscriber.subscriber == subscriber_id) & (models.Subscriber.author == author_id))
+        q = models.Subscriber.delete().where(
+            (models.Subscriber.subscriber == subscriber_id) & (models.Subscriber.author == author_id))
         q.execute()
     except:
         raise errors.AlreadySubscribed
 
-def is_user_subscribed_to_author(user_id:int, author_id:int):
+
+def is_user_subscribed_to_author(user_id: int, author_id: int) ->bool:
     if user_id == author_id:
         return False
     try:
@@ -167,12 +165,31 @@ def is_user_subscribed_to_author(user_id:int, author_id:int):
     else:
         return True
 
-def watch_video(user_id:int, video_id:int):
+
+def watch_video(user_id: int, video_id: int):
     try:
         models.Viewer.create(viewer=user_id, video=video_id)
     except:
-        raise errors.AlreadyWatched
+        viewer_db = models.Viewer.get((models.Viewer.viewer == user_id) & (models.Viewer.video == video_id))
+        viewer_db.viewing_time = datetime.datetime.now
 
-def get_number_of_views(video_id:int):
-    video_db = models.Video.get(video_id==video_id)
-    return video_db.views.count()
+
+def get_number_of_views(video_id: int) -> int:
+    video_db = models.Video.get_by_id(video_id)
+    number_of_views = video_db.views.count()
+    if number_of_views is None:
+        return 0
+    return number_of_views
+
+def get_viewed_videos(viewer_id:int):
+    videos = []
+    for viewing_inf in models.Viewer.select().order_by(models.Viewer.viewing_time):
+        videos.append(models.Video.get_by_id(viewing_inf.video.id))
+    return videos
+
+def delete_video(video_id:int):
+    try:
+        video_db = models.Video.get_by_id(video_id)
+        video_db.delete_instance(recursive=True)
+    except:
+        raise errors.VideoNotExist

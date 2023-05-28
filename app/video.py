@@ -69,5 +69,17 @@ class VideoManager:
         except ClientError:
             return None
 
+    @staticmethod
+    def delete_video(video_id:int):
+        session = boto3.session.Session()
+        s3 = session.client(
+            service_name='s3',
+            aws_access_key_id=VideoManager.__AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=VideoManager.__AWS_SECRET_ACCESS_KEY,
+            endpoint_url='https://storage.yandexcloud.net'
+        )
+        forDeletion = [{'Key': str(video_id)}]
+        response = s3.delete_objects(Bucket=VideoManager.__BUCKET_NAME_FOR_VIDEOS, Delete={'Objects': forDeletion})
+        response = s3.delete_objects(Bucket=VideoManager.__BUCKET_NAME_FOR_PREVIEWS, Delete={'Objects': forDeletion})
 
 

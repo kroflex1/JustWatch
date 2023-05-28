@@ -79,6 +79,7 @@ class UserInf(BaseModel):
     email: str = Field(example="supercat@gamil.com")
     password: str = Field(example="superPassword")
 
+
 class UserChannelInformation(BaseModel):
     username: str = Field(example="SuperCat")
     number_of_subscribers: int = Field(example=245)

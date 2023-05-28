@@ -61,7 +61,7 @@ class AlreadySubscribed(jsonrpc.BaseError):
     MESSAGE = 'User already subscribed to author'
 
 
-class AlreadySubscribed(jsonrpc.BaseError):
+class SubscribedError(jsonrpc.BaseError):
     CODE = 7000
     MESSAGE = 'User already subscribed to author'
 
@@ -79,3 +79,7 @@ class AlreadyWatched(jsonrpc.BaseError):
 class SubscribeToYourself(jsonrpc.BaseError):
     CODE = 7000
     MESSAGE = "User can't subscribe to yourself"
+
+class CantDeleteVideo(jsonrpc.BaseError):
+    CODE = 5000
+    MESSAGE = "You can't delete this video"
