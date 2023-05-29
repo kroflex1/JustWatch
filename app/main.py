@@ -264,16 +264,17 @@ app.add_middleware(
 
 
 @app.post("/api/upload-video-file", dependencies=[Depends(get_db)])
-def upload_video_file(user: Annotated[schemas.User, Depends(get_current_user)], video_name: str,
-                      video_data: UploadFile,
-                      preview_image_data: UploadFile,
-                      video_descr: str | None = None,
-                      ) -> int:
+async def upload_video_file(user: Annotated[schemas.User, Depends(get_current_user)], video_name: str,
+                            video_data: UploadFile,
+                            preview_image_data: UploadFile,
+                            video_descr: str | None = None,
+                            ) -> int:
     if not video_data:
         raise errors.NoFileError
-    db_video = video.VideoManager().upload_video(video_file=video_data.file,
-                                                 video_image_preview=preview_image_data.file, video_name=video_name,
-                                                 video_description=video_descr, author_id=user.id)
+    db_video = await video.VideoManager().upload_video(video_file=video_data.file,
+                                                       video_image_preview=preview_image_data.file,
+                                                       video_name=video_name,
+                                                       video_description=video_descr, author_id=user.id)
     return int(db_video.id)
 
 
