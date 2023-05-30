@@ -213,34 +213,6 @@ def get_latest_viewed_videos(user: Annotated[schemas.User, Depends(get_current_u
 
 
 @api.method(dependencies=[Depends(get_db)])
-def get_latest_viewed_videos(user: Annotated[schemas.User, Depends(get_current_user)]) -> list[schemas.VideoInf]:
-    videos_db = crud.get_viewed_videos(user.id)
-    result = []
-    for video_db in videos_db:
-        preview_image_url = video.VideoManager.get_video_image_preview_url(video_db.id)
-        author_name = crud.get_user_by_id(video_db.author_id.id).username
-        number_of_views = crud.get_number_of_views(video_db.id)
-        result.append(schemas.VideoInf(video_name=video_db.video_name, description=video_db.description, id=video_db.id,
-                                       preview_image_url=preview_image_url, author_name=author_name,
-                                       published_at=video_db.creation_time, number_of_views=number_of_views))
-    return result
-
-
-@api.method(dependencies=[Depends(get_db)])
-def get_latest_viewed_videos(user: Annotated[schemas.User, Depends(get_current_user)]) -> list[schemas.VideoInf]:
-    videos_db = crud.get_viewed_videos(user.id)
-    result = []
-    for video_db in videos_db:
-        preview_image_url = video.VideoManager.get_video_image_preview_url(video_db.id)
-        author_name = crud.get_user_by_id(video_db.author_id.id).username
-        number_of_views = crud.get_number_of_views(video_db.id)
-        result.append(schemas.VideoInf(video_name=video_db.video_name, description=video_db.description, id=video_db.id,
-                                       preview_image_url=preview_image_url, author_name=author_name,
-                                       published_at=video_db.creation_time, number_of_views=number_of_views))
-    return result
-
-
-@api.method(dependencies=[Depends(get_db)])
 def delete_video(user: Annotated[schemas.User, Depends(get_current_user)], video_id: int):
     video_db = models.Video.get_by_id(video_id)
     if video_db.author_id.id != user.id:
