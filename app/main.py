@@ -8,9 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import crud, schemas, errors, authentication, database, models, video, avatar
 from .database import db_state_default
 
+
 logger = logging.getLogger(__name__)
 database.db.connect()
-# database.db.drop_tables([models.User, models.Video, models.Reaction, models.Comment])
 database.db.create_tables(
     [models.User, models.Video, models.Reaction, models.Comment, models.Subscriber, models.Viewer])
 database.db.close()

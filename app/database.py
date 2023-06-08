@@ -1,7 +1,13 @@
 from contextvars import ContextVar
 import peewee
+from .config import settings
 
-DATABASE_NAME = "database.db"
+DATABASE_NAME = settings.database_name
+DATABASE_USER = settings.database_user
+DATABASE_PASSWORD = settings.database_password
+DATABASE_HOST = settings.database_host
+DATABASE_PORT = settings.database_port
+
 db_state_default = {"closed": None, "conn": None, "ctx": None, "transactions": None}
 db_state = ContextVar("db_state", default=db_state_default.copy())
 
@@ -18,5 +24,6 @@ class PeeweeConnectionState(peewee._ConnectionState):
         return self._state.get()[name]
 
 
-db = peewee.SqliteDatabase(DATABASE_NAME, check_same_thread=False)
+db = peewee.PostgresqlDatabase(DATABASE_NAME, user=DATABASE_USER, password=DATABASE_PASSWORD, host=DATABASE_HOST,
+                               port=DATABASE_PORT)
 db._state = PeeweeConnectionState()

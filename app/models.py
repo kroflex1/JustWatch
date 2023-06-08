@@ -8,7 +8,6 @@ class BaseModel(Model):
         database = db
 
 
-
 class User(BaseModel):
     email = CharField(unique=True, index=True)
     username = CharField(unique=True, index=True)
@@ -33,21 +32,26 @@ class Reaction(BaseModel):
     class Meta:
         primary_key = CompositeKey('video', 'user')
 
+
 class Comment(BaseModel):
     video_id = ForeignKeyField(Video, backref='comments')
     author_id = ForeignKeyField(User, backref='comments')
     text = TextField()
     published_at = DateTimeField(default=datetime.datetime.now)
 
+
 class Subscriber(BaseModel):
     subscriber = ForeignKeyField(User, backref='subscribedToUsers')
     author = ForeignKeyField(User, backref='subscribers')
+
     class Meta:
         primary_key = CompositeKey('subscriber', 'author')
+
 
 class Viewer(BaseModel):
     viewer = ForeignKeyField(User, backref="viewedVideos")
     video = ForeignKeyField(Video, backref="views")
     viewing_time = DateTimeField(default=datetime.datetime.now)
+
     class Meta:
         primary_key = CompositeKey('viewer', 'video')
