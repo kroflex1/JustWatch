@@ -224,7 +224,7 @@ def delete_video(user: Annotated[schemas.User, Depends(get_current_user)], video
 app = jsonrpc.API()
 app.bind_entrypoint(api)
 
-origins = ["http://127.0.0.1:5173"]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
