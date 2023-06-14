@@ -3,7 +3,7 @@ import fastapi_jsonrpc as jsonrpc
 import logging
 from contextlib import asynccontextmanager
 from typing import Annotated
-from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.cors import CORSMiddleware
 
 from . import crud, schemas, errors, authentication, database, models, video, avatar
 from .database import db_state_default
@@ -229,11 +229,9 @@ def delete_video(user: Annotated[schemas.User, Depends(get_current_user)], video
 app = jsonrpc.API()
 app.bind_entrypoint(api)
 
-origins = ["*"]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=['*'],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
