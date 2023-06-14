@@ -111,7 +111,7 @@ def get_user_profile(user: Annotated[schemas.User, Depends(get_current_user)],
     number_of_videos = len(videos_show_inf)
     user_avatar_url = avatar.AvatarManager.get_avatar_url(user_id)
 
-    return schemas.UserProfileInformation(username=user.username,
+    return schemas.UserProfileInformation(username=user_db.username,
                                           number_of_subscribers=number_of_subscribers,
                                           number_of_videos=number_of_videos,
                                           user_videos=videos_show_inf,
