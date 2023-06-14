@@ -40,6 +40,7 @@ class VideoInf(VideoCreate):
     id: int = Field(example=1)
     preview_image_url: str | None
     author_name: str = Field(example="SuperCat")
+    author_id: int = Field(example = "1")
     published_at: datetime = Field(example='2008-09-15T15:53:00+05:00')
     number_of_views: int = Field(example='3412')
 

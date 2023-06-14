@@ -55,6 +55,14 @@ class VideoNotExist(jsonrpc.BaseError):
     CODE = 5000
     MESSAGE = 'No video with this id found'
 
+class InvalidVideoFormat(jsonrpc.BaseError):
+    CODE = 5000
+    MESSAGE = 'Invalid video format'
+
+class InvalidImageFormat(jsonrpc.BaseError):
+    CODE = 5000
+    MESSAGE = 'Invalid image format'
+
 
 class AlreadySubscribed(jsonrpc.BaseError):
     CODE = 7000

@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import crud, schemas, errors, authentication, database, models, video, avatar
 from .database import db_state_default
 
-
 logger = logging.getLogger(__name__)
 database.db.connect()
 database.db.create_tables(
@@ -106,7 +105,7 @@ def get_user_profile(user: Annotated[schemas.User, Depends(get_current_user)],
         number_of_views = crud.get_number_of_views(user_video.id)
         videos_show_inf.append(
             schemas.VideoInf(video_name=user_video.video_name, description=user_video.description, id=user_video.id,
-                             preview_image_url=preview_image_url, author_name=author_name,
+                             preview_image_url=preview_image_url, author_name=author_name, author_id=user_id,
                              published_at=user_video.creation_time, number_of_views=number_of_views))
     number_of_subscribers = user_db.subscribers.count()
     number_of_videos = len(videos_show_inf)
@@ -130,6 +129,7 @@ def get_all_videos_inf(user: Annotated[schemas.User, Depends(get_current_user)])
         videos.append(
             schemas.VideoInf(id=video_inf.id, video_name=video_inf.video_name, description=video_inf.description,
                              preview_image_url=preview_image_url, author_name=author_name,
+                             author_id=video_inf.author_id.id,
                              published_at=video_inf.creation_time, number_of_views=number_of_views))
     return videos
 
@@ -159,6 +159,11 @@ def get_user_channel_information(user: Annotated[schemas.User, Depends(get_curre
     user_avatar_url = avatar.AvatarManager.get_avatar_url(user_id)
     return schemas.UserChannelInformation(username=user_db.username, number_of_subscribers=user_db.subscribers.count(),
                                           user_avatar_url=user_avatar_url)
+
+
+@api.method()
+def get_user_avatar_image(user: Annotated[schemas.User, Depends(get_current_user)], user_id: int) -> str:
+    return avatar.AvatarManager.get_avatar_url(user_id)
 
 
 @api.method(dependencies=[Depends(get_db)])
@@ -207,7 +212,7 @@ def get_latest_viewed_videos(user: Annotated[schemas.User, Depends(get_current_u
         author_name = crud.get_user_by_id(video_db.author_id.id).username
         number_of_views = crud.get_number_of_views(video_db.id)
         result.append(schemas.VideoInf(video_name=video_db.video_name, description=video_db.description, id=video_db.id,
-                                       preview_image_url=preview_image_url, author_name=author_name,
+                                       preview_image_url=preview_image_url, author_name=author_name,  author_id = video_db.author_id.id,
                                        published_at=video_db.creation_time, number_of_views=number_of_views))
     return result
 
@@ -243,6 +248,10 @@ async def upload_video_file(user: Annotated[schemas.User, Depends(get_current_us
                             ) -> int:
     if not video_data:
         raise errors.NoFileError
+    if video_data.content_type not in ['video/mp4']:
+        raise errors.InvalidVideoFormat
+    if preview_image_data.content_type not in ['image/jpeg', 'image/png']:
+        raise errors.InvalidImageFormat
     db_video = await video.VideoManager().upload_video(video_file=video_data.file,
                                                        video_image_preview=preview_image_data.file,
                                                        video_name=video_name,
@@ -254,4 +263,6 @@ async def upload_video_file(user: Annotated[schemas.User, Depends(get_current_us
 def upload_avatar(user: Annotated[schemas.User, Depends(get_current_user)], avatar_data: UploadFile):
     if not avatar_data:
         raise errors.NoFileError
+    if avatar_data.content_type not in ['image/jpeg', 'image/png']:
+        raise errors.InvalidImageFormat
     avatar.AvatarManager.upload_avatar(avatar_file=avatar_data.file, user_id=user.id)
