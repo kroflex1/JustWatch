@@ -2,6 +2,7 @@ import boto3
 import os
 from dotenv import load_dotenv
 from app import schemas, crud, errors
+from config import settings
 from botocore.exceptions import ClientError
 import asyncio
 import aioboto3

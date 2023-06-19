@@ -182,11 +182,10 @@ def get_number_of_views(video_id: int) -> int:
     return number_of_views
 
 def get_viewed_videos(viewer_id:int):
-    viewed_history =sorted(models.User.get_by_id(viewer_id).viewedVideos, key=lambda x: x.viewing_time)
-    videos_db = []
-    for viewing_inf in viewed_history:
-        videos_db.append(models.Video.get_by_id(viewing_inf.video.id))
-    return videos_db
+    videos = []
+    for viewing_inf in models.Viewer.select().where(models.User.id == viewer_id).order_by(models.Viewer.viewing_time):
+        videos.append(models.Video.get_by_id(viewing_inf.video.id))
+    return videos
 
 def delete_video(video_id:int):
     try:
