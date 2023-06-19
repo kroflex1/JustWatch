@@ -183,7 +183,7 @@ def get_number_of_views(video_id: int) -> int:
 
 def get_viewed_videos(viewer_id:int):
     videos = []
-    for viewing_inf in models.Viewer.select().where(models.Viewer.viewer == viewer_id).order_by(models.Viewer.viewing_time):
+    for viewing_inf in models.Viewer.select().where(models.Viewer.viewer.id == viewer_id).order_by(models.Viewer.viewing_time):
         videos.append(models.Video.get_by_id(viewing_inf.video.id))
     return videos
 
